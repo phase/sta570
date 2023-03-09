@@ -1,0 +1,126 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+# Appendix
+
+> Jadon Fowler, STA 570 Section 1
+>
+> 2023/02/13
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+library(ggplot2)
+library(dplyr)
+library(mosaic)
+library(mosaicData)
+library(data.table)
+library(Lock5Data)
+
+data("BodyTemp50",package = "Lock5Data")
+data("EmployedACS",package = "Lock5Data")
+```
+
+1) a)
+
+```{r}
+ggplot(BodyTemp50) +
+  geom_histogram(aes(x=Pulse))
+```
+
+1) b)
+
+```{r}
+mean(BodyTemp50$Pulse)
+sd(BodyTemp50$Pulse)
+```
+
+1) c)
+
+```{r}
+BootDist <- mosaic::do(10000) *
+  mosaic::resample(BodyTemp50) %>% 
+  summarise(boot.mean=mean(Pulse))
+```
+
+1) d)
+
+```{r}
+ggplot(BootDist, aes(x=boot.mean)) +
+  geom_histogram() +
+  ggtitle('Bootstrap distribution of resampled means')
+mean(BootDist$boot.mean)
+sd(BootDist$boot.mean)
+```
+
+1) e)
+
+```{r}
+quantile(BootDist$boot.mean, probs=c(0.025, 0.975))
+```
+
+1) f)
+
+```{r}
+original.sample.mean <- mean(BodyTemp50$Pulse)
+std.error <- sd(BootDist$boot.mean)
+c(original.sample.mean - 2*std.error, original.sample.mean + 2*std.error)
+```
+
+2) a)
+
+```{r}
+ggplot(EmployedACS) +
+  geom_histogram(aes(x=HoursWk), bins=30)
+```
+
+2) b)
+
+```{r}
+(sample.mean <- mean(EmployedACS$HoursWk))
+(stddev <- sd(EmployedACS$HoursWk))
+```
+
+2) c)
+
+```{r}
+hours.bootstrap <- mosaic::do(10000) *
+  mosaic::resample(EmployedACS) %>% 
+  summarise(boot.mean=mean(HoursWk))
+```
+
+2) d)
+
+```{r}
+ggplot(hours.bootstrap) +
+  geom_histogram(aes(x=boot.mean))
+mean(hours.bootstrap$boot.mean)
+sd(hours.bootstrap$boot.mean)
+```
+
+2) e)
+
+```{r}
+quantile(hours.bootstrap$boot.mean, probs=c(0.025, 0.975))
+```
+
+2) f)
+
+```{r}
+std.error <- sd(hours.bootstrap$boot.mean)
+c(sample.mean - 2*std.error, sample.mean + 2*std.error)
+```
+
+3) a)
+
+```{r}
+BootDist <- mosaic::do(10000) *
+  mosaic::resample(BodyTemp50) %>% 
+  summarise(boot.sd=sd(Pulse))
+```
+
+3) b)
+
+```{r}
+quantile(BootDist$boot.sd, probs=c(0.025, 0.975))
+```

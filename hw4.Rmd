@@ -1,0 +1,64 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Appendix
+
+> Jadon Fowler, STA 570 Section 1
+>
+> 2023/02/20
+
+1) a)
+
+```{r}
+pnorm(230, 222, 5, lower.tail=F)
+```
+
+1) e)
+
+```{r}
+pnorm(230, 222, 2.041241, lower.tail=F)
+```
+
+2) a)
+
+```{r}
+pnorm(9, 10, 1.5)
+```
+
+2) b)
+
+```{r}
+pnorm(9, 10, sqrt((1.5^2) / 5))
+```
+
+3) a)
+
+```{r}
+pnorm(296, 298, 3)
+```
+
+3) b) n=6
+
+```{r}
+pnorm(296, 298, sqrt(3/2))
+```
+
+3) c)
+
+```{r}
+pnorm(299, 298, 3) - pnorm(297, 298, 3)
+```
+
+3) d)
+```{r}
+pnorm(299, 298, sqrt(9/10)) - pnorm(297, 298, sqrt(9/10))
+```
+
+3) e)
+```{r}
+pnorm(298, 300, 3)
+```
+
