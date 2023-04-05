@@ -1,0 +1,208 @@
+Get the necessary libraries going.
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(mosaic)
+```
+
+Create A data Set called "IndependantSamplesDataSet" data in the typical format for an independant samples analysis. One row for each measurement.  We need two columns  "MeasurementColumn" and "GroupIdentifierColumn".  The first 12 measurements are identified as Group1 and the next 8 measurements are identified as Group2.
+
+```{r}
+IndependantSamplesData <- data.frame(  MeasurementColumn = c(13.6,16,11.5,13.2,13.2,15.7,13.6,7.8,12.9,13.3,15.2,15.5,16.8,17.4,13.3,14.9,16.9,18.6,17.4,12.5),  GroupIdentifierColumn = c( rep('Group1', 12), rep('Group2',8) ) )
+```
+
+Make a comparative histogram for the two groups.
+
+```{r}
+ggplot(IndependantSamplesData, aes(x=MeasurementColumn)) +
+  geom_histogram(binwidth=1) +
+  facet_grid( GroupIdentifierColumn ~ . )
+```
+
+Calculate the means, variances, standard deviations, and samples sizes for the two groups.  Note that these are the sample statistics you will use to plug into the asymptotic (T) formulae presented in class and in the text.
+
+```{r}
+IndependantSamplesData %>% group_by(GroupIdentifierColumn) %>%  summarise(xbar.i = mean(MeasurementColumn),  s2.i   = var(MeasurementColumn),  s.i    = sd(MeasurementColumn),  n.i    = n())
+```
+Now we'll use the randomization technique to find a p-value.
+Create a data set called "RandomizedDiffSampMeans" that is a randomization distribution of the difference in sample means that would occur if the null hupothesis were true, i.e., if there is no difference in population means.  There is one column:  "DifferenceInSampleMeans".
+
+```{r}
+RandomizedDiffSampMeans <- mosaic::do(10000) *{
+  IndependantSamplesData %>%
+    mutate(ShuffledGroupMembership = mosaic::shuffle(GroupIdentifierColumn)) %>%
+    group_by( ShuffledGroupMembership )              %>% 
+    summarise( xbar.i = mean(MeasurementColumn) )     %>%
+    summarise( DifferenceInSampleMeans = diff(xbar.i) )
+}
+```
+
+Graph the randomization Distribution
+
+
+```{r}
+ggplot(RandomizedDiffSampMeans, aes(x=DifferenceInSampleMeans)) +
+  geom_histogram(binwidth=.5) +
+  ggtitle('Sampling Dist. of DifferenceInSampleMeans assuming H0 is true')
+
+```
+
+Calculate a p-value.  I'm assuming this exercise is a lower tail test:  We suspect that the Group1 Population Mean is less than the Group2 Population Mean.  From our original sample, we calculated the Group1 Sample Mean to be 13.45833 and the Group2 sample mean to be 15.975.  Our original sample difference in means is -2.5167
+.  What proportion of randomization differences in sample means are as small as this?  This is our p-value.  We can do this in a bunch of differrent ways.
+
+If it was an upper tail test the < would change to >.  For a two tail test, I'd just double one tail proportion (if the sample stat is positive, double the result using >.  If the sample stat is negative, double the result using <).
+
+
+```{r}
+length(which(RandomizedDiffSampMeans$DifferenceInSampleMeans< -2.5167))/length(RandomizedDiffSampMeans$DifferenceInSampleMeans)
+```
+```{r}
+p.value <- RandomizedDiffSampMeans %>%
+  summarise( mean( DifferenceInSampleMeans <= -2.5167 ))
+p.value
+```
+
+Maybe we want to follow up with a bootstrap confidence interval for the difference in population means. Is zero in the interval?
+
+```{r}
+BootDist <- mosaic::do(10000)*{
+  IndependantSamplesData %>%
+    group_by(GroupIdentifierColumn)                     %>%
+    mosaic::resample()                  %>%
+    summarise( xbar.i = mean(MeasurementColumn) )  %>%
+    summarise( d.star = diff(xbar.i) )    
+}
+```
+
+Notice the subtraction was reversed.  I'm not sure why this happens.
+
+```{r}
+ggplot(BootDist, aes(x=d.star)) +
+  geom_histogram(binwidth=.2) +
+  ggtitle('Bootstrap distribution of d*')
+```
+
+```{r}
+CI <- quantile( BootDist$d.star, probs=c(0.025, 0.975) )
+CI
+```
+
+Let's do a t-test assuming unequal variances.
+
+```{r}
+mosaic::t.test( MeasurementColumn ~ GroupIdentifierColumn, data=IndependantSamplesData, 
+        var.equal=FALSE, conf.level=0.95 )
+```
+
+Let's do a t-test assuming equal variances.
+
+```{r}
+mosaic::t.test( MeasurementColumn ~ GroupIdentifierColumn, data=IndependantSamplesData, 
+        var.equal=TRUE, conf.level=0.95 )
+```
+
+OK.  Now let's deal with paired data.  Here is the usual way that paired data is stored:  One row for each pair of measurements, and a column for each measurement.
+
+
+
+```{r}
+PairedSamplesData <- data.frame(Measurement1 = c(13.6,16,11.5,13.2,13.2,15.7,13.6,7.8),  Measurement2 = c( 13.3,17.4,16.8,14.9,16.9,18.6,12.5,17.4))
+```
+
+The first thing we want to do is create a differences column, since the differences are what we wish to analyze
+
+```{r}
+PairedSamplesData <- PairedSamplesData  %>%
+  mutate( Differences = Measurement1 - Measurement2 )  
+```
+
+
+
+Let's find the sample mean, standard deviation, and number of the differences.  These are the values we'll use to do the asymptotic (T) methods in our formulae.
+
+
+```{r}
+mean(PairedSamplesData$Differences)
+sd(PairedSamplesData$Differences)
+length(PairedSamplesData$Differences)
+```
+
+
+ We can also make a graph of the differences.  Not much of a graph in this example:  Really small data set.
+ 
+```{r}
+ggplot(PairedSamplesData, aes(x=Differences)) +
+  geom_histogram(binwidth=2) +
+  ggtitle('Difference (Measurement1 - Measurement2)')
+```
+ 
+ We can have R do the asymtotic t-test using the differences in a one sample procedure.
+ 
+ 
+```{r}
+t.test( PairedSamplesData$Differences )
+```
+ 
+ We can do the same thing by telling R that it's paired data and where to find the two measurement columns.
+ 
+```{r}
+t.test( PairedSamplesData$Measurement1, PairedSamplesData$Measurement2, paired=TRUE ) 
+```
+ 
+ Now, to deal with the permutation/resampling/randomization methods.  First we have to make a "long" form of the data.  This code creates a set with twicw as many rows where there is a column identifying whether it is measurement1 or measurement2 and another containing the measurement itself.  We need the data in this format in order to run the randomization code.
+ 
+```{r}
+PairedSamplesData.Long <- PairedSamplesData %>%
+  mutate(UnitId = factor(1:n())) %>%        # Give each row a unique ID 
+  gather('MeasurementId', 'Measurement', Measurement1, Measurement2) %>%  # pivot from Husband/Wife to Spouse/Age
+  arrange(UnitId, desc(MeasurementId))             # Sort by Marriage, then (Wife,Husband)
+```
+ 
+ Now we can access this "long" data set to build our randomization distribution.  This is the estimated sampling distribution of the average paired differrences under the assumption that the population mean paired difference is zero.
+ 
+```{r}
+PermDist <- mosaic::do(10000)*{ 
+  PairedSamplesData.Long            %>%
+    group_by(UnitId)         %>% 
+    mutate(Measurement = mosaic::shuffle(Measurement)) %>%  
+    summarize(d.i = diff(Measurement))         %>%  
+    summarize(d.bar = mean(d.i))            # calc the mean difference
+}
+```
+
+Now let's graph the randomization distribution
+```{r}
+ggplot(PermDist, aes(x=d.bar)) + 
+  geom_histogram()
+```
+And calculate a p-value.  Note: our original sample statistic is -2.9.  If we're doing a lower tail test, we use this:
+
+```{r}
+PermDist %>%
+  summarize( p.value = mean(d.bar <= -2.9) )
+```
+
+ If we're doing a two tail test, we use this:
+ 
+```{r}
+PermDist %>%
+  summarize( p.value = 2*mean(d.bar <= -2.9) )
+```
+ 
+ Now, we build a bootstrap CI
+ 
+```{r}
+# Bootstrap CI for delta
+BootDist <- mosaic::do(10000)*{ 
+  PairedSamplesData.Long            %>%
+    group_by(UnitId)         %>% 
+    summarize(d.i = diff(Measurement)) %>%  
+      mosaic::resample()         %>% 
+    summarize(d.bar = mean(d.i))    # calc the mean difference
+}
+quantile( BootDist$d.bar, probs=c(0.025, 0.975) )
+```
+ 
+ 
