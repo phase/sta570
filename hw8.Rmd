@@ -1,0 +1,88 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Appendix
+
+> Jadon Fowler, STA 570 Section 1
+>
+> Homework 8, 2023/04/06
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+library(ggplot2)
+library(dplyr)
+library(mosaic)
+library(Lock5Data)
+library(tidyr)
+library(coin)
+```
+
+1)
+
+a)
+```{r}
+pf(0.5, df1=5, df2=5)
+1-pf(0.5, df1=5, df2=5)
+pf(6, df1=4, df2=10)
+1-pf(1/6, df1=10, df2=4)
+```
+
+
+2)
+```{r}
+pf(7^2/4^2, 14, 19)
+```
+
+3)
+```{r}
+ComponentFailure <- data.frame(TimeToFailure
+=c(19.25,19.7,19.75,19.9,19.95,20.05,20.13,20.4,20.6,9.7,9.75,9.8,9.82,
+9.85,9.9,9.92,10.01,10.02,10.1,10.11,10.13,10.19,10.28),Voltage = c(
+rep('110Voltage',9), rep('220Voltage',14)))
+ComponentFailure110 <- data.frame(TimeToFailure
+=c(19.25,19.7,19.75,19.9,19.95,20.05,20.13,20.4,20.6))
+ComponentFailure220 <- data.frame(TimeToFailure
+=c(9.7,9.75,9.8,9.82,9.85,9.9,9.92,10.01,10.02,10.1,10.11,10.13,10.19,10.28))
+```
+
+a)
+```{r}
+mean(ComponentFailure110$TimeToFailure)
+var(ComponentFailure110$TimeToFailure)
+mean(ComponentFailure220$TimeToFailure)
+var(ComponentFailure220$TimeToFailure)
+```
+
+b)
+
+i)
+```{r}
+#3.b.i
+qqnorm(ComponentFailure110$TimeToFailure)
+qqnorm(ComponentFailure220$TimeToFailure)
+```
+The plots look like they follow a diagonal line and look normally distributed.
+
+ii)
+```{r}
+#3.b.ii
+shapiro.test(ComponentFailure110$TimeToFailure)
+shapiro.test(ComponentFailure220$TimeToFailure)
+```
+
+c)
+
+i)
+P(F(9-1,14-1) < 0.157/0.031)
+```{r}
+pf(0.157/0.031, 9-1, 14-1)
+```
+
+
+ii)
+```{r}
+var.test(ComponentFailure110$TimeToFailure, ComponentFailure220$TimeToFailure)
+```
+p-value = 0.01024, the variances are not equal.
