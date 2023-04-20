@@ -1,0 +1,64 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Appendix
+
+> Jadon Fowler, STA 570 Section 1
+>
+> Homework 9, 2023/04/20
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+library(car)
+library(ggplot2)
+library(dplyr)
+library(ggfortify)
+library(emmeans)
+library(multcompView)
+library(multcomp)
+```
+
+```{r}
+# 1
+pf(29.466, df1=3, df2=13)
+# 2
+pf(.3458652541,df1=2,df2=6)
+# 3
+pf(31.147,df1=2,df2=9)
+data.3 <- data.frame(grp = rep(c('1','2','3'), each = 4 ), y = c(4,6,6,8,8,8,6,6,12,13,15,16))
+model <- lm(y ~ grp, data=data.3)
+anova(model)
+```
+
+```{r}
+# 5
+Levi <- read.csv('https://raw.githubusercontent.com/dereksonderegger/570/master/data-raw/Levi.csv')
+ggplot(Levi) +
+  geom_boxplot(aes(x=Plant, y=Waste))
+
+car::leveneTest(Waste~Plant, Levi)
+levi.model <- lm(Waste ~ Plant, data=Levi)
+anova(levi.model)
+shapiro.test(resid(levi.model))
+```
+
+```{r}
+# 6
+data('iris')
+ggplot(iris) +
+  geom_boxplot(aes(x=Species,y=Sepal.Width))
+
+#b
+car::leveneTest(Sepal.Width~Species, iris)
+#c
+iris.model <- lm(Sepal.Width ~ Species, data=iris)
+anova(iris.model)
+qqplot(iris$Sepal.Width, iris$Species)
+shapiro.test(resid(iris.model))
+
+#e
+emmeans::emmeans(iris.model, pairwise ~ Species)
+
+```
