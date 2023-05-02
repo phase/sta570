@@ -1,0 +1,114 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Appendix
+
+> Jadon Fowler, STA 570 Section 1
+>
+> Homework 10, 2023/05/02
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+library(car)
+library(ggplot2)
+library(dplyr)
+library(ggfortify)
+library(emmeans)
+library(multcompView)
+library(multcomp)
+```
+
+1.a.
+```{r}
+# read in the data
+p1.data <- data.frame(
+ x = c( 3, 8, 10, 18, 23, 28),
+ y = c(14, 28, 43, 62, 79, 86) )
+
+# make a nice graph
+ggplot(p1.data, aes(x=x, y=y)) +
+ geom_point()
+```
+1.c.
+```{r}
+p1.model <- lm(y ~ x, p1.data)
+anova(p1.model)
+predict(p1.model)
+resid(p1.model)
+summary(p1.model)
+```
+
+1.d.
+```{r}
+# 'x' here is the slope CI
+confint(p1.model)
+```
+
+1.e.
+```{r}
+summary(p1.model)
+# e. p = 0.000155, we can reject the null hypothesis
+# f. R^2 = 0.9797
+# g. typical distance = stddev = 4.551
+```
+
+1.h.
+```{r}
+# make a nice graph
+ggplot(p1.data, aes(x=x, y=y)) +
+ geom_point() +
+ geom_smooth(method='lm')
+# Often I want to create the confidence region myself (perhaps to use a prediction
+# interval instead of a confidence interval), and we could use the following code:
+p1.data2 <- p1.data %>%
+ mutate( yhat = predict(p1.model),
+ lwr = predict(p1.model, interval='confidence')[,2],
+ upr = predict(p1.model, interval='confidence')[,3] )
+# make a nice graph
+ggplot(p1.data2, aes(x=x)) +
+ geom_ribbon( aes(ymin=lwr, ymax=upr), fill='pink', alpha=.2 ) +
+ geom_line( aes( y=yhat), color='green' ) +
+ geom_point( aes( y=y ), color='black' )
+```
+
+3.a.
+```{r}
+drug.data <- data.frame(
+ dose = c(2,2,2,4,4,8,8,16,16,16,32,32,64,64,64),
+ response = c(5,7,3,10,14,15,17,20,21,19,23,29,28,31,30) )
+ggplot(drug.data) +
+  geom_point(aes(x=dose, y=response))
+
+
+drug.model <- lm(response ~ dose, drug.data)
+autoplot(drug.model, which=c(1,2))
+```
+
+3.b.
+```{r}
+# i
+drug.data <- drug.data %>% mutate(logdose = log(dose))
+ggplot(drug.data) +
+  geom_point(aes(x=logdose, y=response))
+# A linear model seems appropriate
+
+# ii
+drug.model <- lm(response ~ logdose, drug.data)
+
+# iii
+autoplot(drug.model, which=c(1,2))
+# The residuals have far less curvature, so the linear model seems appropriate.
+
+# iv
+shapiro.test(resid(drug.model))
+# The model appears to be Normally Distributed
+
+# v
+# slope = 7
+
+# vi
+confint(drug.model)
+```
+
